@@ -3,6 +3,7 @@
 import * as crypto from 'crypto';
 
 import { ESPLoader, Transport } from 'esptool-js';
+import { serial as webSerialPolyfill } from 'web-serial-polyfill';
 import OtaPartition from '@/esp/OtaPartition';
 
 const PARTITION_TYPES: Record<number, Record<number, string>> = {
@@ -41,17 +42,79 @@ const PARTITION_TYPES: Record<number, Record<number, string>> = {
   },
 };
 
+type SerialTransportDevice = ConstructorParameters<typeof Transport>[0];
+
+const DEVICE_FILTERS: SerialPortFilter[] = [
+  { usbVendorId: 12346, usbProductId: 4097 },
+];
+
+const FULL_FLASH_SIZE = 0x1000000;
+const PARTITION_TABLE_OFFSET = 0x8000;
+const APP0_PARTITION_OFFSET = 0x10000;
+const APP1_PARTITION_OFFSET = 0x650000;
+const APP_PARTITION_SIZE = 0x640000;
+const APP_IMAGE_MAGIC = 0xe9;
+const PARTITION_ENTRY_MAGIC = [0xaa, 0x50];
+
 export default class EspController {
-  static async requestDevice() {
-    if (!('serial' in navigator && navigator.serial)) {
-      throw new Error(
-        'WebSerial is not supported in this browser. Please use Chrome or Edge.',
-      );
+  private static getNativeSerial() {
+    if (typeof navigator === 'undefined') {
+      return null;
     }
 
-    return navigator.serial.requestPort({
-      filters: [{ usbVendorId: 12346, usbProductId: 4097 }],
-    });
+    if ('serial' in navigator && navigator.serial) {
+      return navigator.serial;
+    }
+
+    return null;
+  }
+
+  private static hasWebUsbSupport() {
+    if (typeof navigator === 'undefined') {
+      return false;
+    }
+
+    return 'usb' in navigator && !!navigator.usb;
+  }
+
+  private static looksLikeEspAppImage(data: Uint8Array, offset = 0): boolean {
+    return data[offset] === APP_IMAGE_MAGIC;
+  }
+
+  private static looksLikeEspPartitionTable(data: Uint8Array): boolean {
+    return (
+      data[PARTITION_TABLE_OFFSET] === PARTITION_ENTRY_MAGIC[0] &&
+      data[PARTITION_TABLE_OFFSET + 1] === PARTITION_ENTRY_MAGIC[1]
+    );
+  }
+
+  static async requestDevice(): Promise<SerialTransportDevice> {
+    try {
+      const nativeSerial = this.getNativeSerial();
+      if (nativeSerial) {
+        return await nativeSerial.requestPort({
+          filters: DEVICE_FILTERS,
+        });
+      }
+
+      if (this.hasWebUsbSupport()) {
+        return (await webSerialPolyfill.requestPort({
+          filters: DEVICE_FILTERS,
+        })) as unknown as SerialTransportDevice;
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'NotFoundError') {
+        throw new Error(
+          'No device selected. Connect your Xteink with a USB data cable, then pick it from the browser prompt.',
+        );
+      }
+
+      throw error;
+    }
+
+    throw new Error(
+      'USB serial is not supported in this browser. Use Chrome/Edge on desktop, or Chrome on Android with a USB OTG data cable.',
+    );
   }
 
   static async fromRequestedDevice() {
@@ -61,7 +124,7 @@ export default class EspController {
 
   private espLoader;
 
-  constructor(device: SerialPort) {
+  constructor(device: SerialTransportDevice) {
     const transport = new Transport(device, false);
     this.espLoader = new ESPLoader({
       transport,
@@ -140,9 +203,22 @@ export default class EspController {
       total: number,
     ) => void,
   ) {
-    if (data.length !== 0x1000000) {
+    if (data.length !== FULL_FLASH_SIZE) {
       throw new Error(
         `Data length must be 0x1000000, but got 0x${data.length.toString().padStart(7, '0')}`,
+      );
+    }
+    if (!EspController.looksLikeEspPartitionTable(data)) {
+      throw new Error(
+        'Full flash image does not contain a valid ESP partition table at 0x8000. Refusing to write.',
+      );
+    }
+    if (
+      !EspController.looksLikeEspAppImage(data, APP0_PARTITION_OFFSET) &&
+      !EspController.looksLikeEspAppImage(data, APP1_PARTITION_OFFSET)
+    ) {
+      throw new Error(
+        'Full flash image does not look like Xteink firmware (missing ESP app header in app0/app1). Refusing to write.',
       );
     }
 
@@ -180,8 +256,13 @@ export default class EspController {
       totalSize: number,
     ) => void,
   ) {
-    const offset = partitionLabel === 'app0' ? 0x10000 : 0x650000;
-    return this.espLoader.readFlash(offset, 0x640000, onPacketReceived);
+    const offset =
+      partitionLabel === 'app0' ? APP0_PARTITION_OFFSET : APP1_PARTITION_OFFSET;
+    return this.espLoader.readFlash(
+      offset,
+      APP_PARTITION_SIZE,
+      onPacketReceived,
+    );
   }
 
   async readAppPartitionForIdentification(
@@ -206,7 +287,8 @@ export default class EspController {
     // In testing, most firmwares are identified within the first 25KB read, so reading the entire
     // partition is unnecessary in the majority of cases.
 
-    const baseOffset = partitionLabel === 'app0' ? 0x10000 : 0x650000;
+    const baseOffset =
+      partitionLabel === 'app0' ? APP0_PARTITION_OFFSET : APP1_PARTITION_OFFSET;
 
     return this.espLoader.readFlash(
       baseOffset + offset,
@@ -224,7 +306,7 @@ export default class EspController {
       total: number,
     ) => void,
   ) {
-    if (data.length > 0x640000) {
+    if (data.length > APP_PARTITION_SIZE) {
       throw new Error(`Data cannot be larger than 0x640000`);
     }
     if (data.length < 0xf0000) {
@@ -232,8 +314,14 @@ export default class EspController {
         `Data seems too small, are you sure this is the right file?`,
       );
     }
+    if (!EspController.looksLikeEspAppImage(data)) {
+      throw new Error(
+        'Firmware image is missing the ESP app header (0xE9). Refusing to write this file.',
+      );
+    }
 
-    const offset = partitionLabel === 'app0' ? 0x10000 : 0x650000;
+    const offset =
+      partitionLabel === 'app0' ? APP0_PARTITION_OFFSET : APP1_PARTITION_OFFSET;
 
     await this.writeData(data, offset, reportProgress);
   }

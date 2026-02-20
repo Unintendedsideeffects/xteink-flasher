@@ -1,7 +1,3 @@
-'use server';
-
-import { getCache } from '@vercel/functions';
-
 interface OfficialFirmwareData {
   change_log: string;
   download_url: string;
@@ -43,11 +39,36 @@ const chineseFirmwareCheckUrl =
 const englishFirmwareCheckUrl =
   'http://gotaserver.xteink.com/api/check-update?current_version=V3.0.1&device_type=ESP32C3&device_id=1234';
 
+interface CacheEntry<T> {
+  value: T;
+  expiresAt: number;
+}
+
+const memoryCache = new Map<string, CacheEntry<unknown>>();
+
+const getCached = <T>(key: string): T | null => {
+  const cached = memoryCache.get(key);
+  if (!cached) {
+    return null;
+  }
+  if (Date.now() > cached.expiresAt) {
+    memoryCache.delete(key);
+    return null;
+  }
+  return cached.value as T;
+};
+
+const setCached = <T>(key: string, value: T, ttlSeconds: number) => {
+  memoryCache.set(key, {
+    value,
+    expiresAt: Date.now() + ttlSeconds * 1000,
+  });
+};
+
 export async function getOfficialFirmwareRemoteData(): Promise<OfficialFirmwareVersions> {
-  const cache = getCache();
   const cacheKey = 'firmware-versions.official.v1';
 
-  const value = (await cache.get(cacheKey)) as OfficialFirmwareVersions | null;
+  const value = getCached<OfficialFirmwareVersions>(cacheKey);
   if (value) {
     return value;
   }
@@ -63,9 +84,7 @@ export async function getOfficialFirmwareRemoteData(): Promise<OfficialFirmwareV
         ch: chData.data,
       };
 
-      await cache.set(cacheKey, data, {
-        ttl: 60 * 60 * 24, // 24 hours
-      });
+      setCached(cacheKey, data, 60 * 60 * 24); // 24 hours
 
       return data;
     })
@@ -82,10 +101,9 @@ export async function getOfficialFirmwareVersions() {
 }
 
 export async function getCommunityFirmwareRemoteData(): Promise<CommunityFirmwareVersions> {
-  const cache = getCache();
   const cacheKey = 'firmware-versions.community.v1';
 
-  const value = (await cache.get(cacheKey)) as CommunityFirmwareVersions | null;
+  const value = getCached<CommunityFirmwareVersions>(cacheKey);
   if (value) {
     return value;
   }
@@ -111,9 +129,7 @@ export async function getCommunityFirmwareRemoteData(): Promise<CommunityFirmwar
     },
   };
 
-  await cache.set(cacheKey, data, {
-    ttl: 60 * 60, // 1 hour
-  });
+  setCached(cacheKey, data, 60 * 60); // 1 hour
 
   return data;
 }

@@ -5903,6 +5903,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"web-serial-polyfill@npm:^1.0.15":
+  version: 1.0.15
+  resolution: "web-serial-polyfill@npm:1.0.15"
+  checksum: 10c0/00c1506154eef3078d63b661a91916a73e914adf38f29b18df00425c8f295a689425f1a953f19598d8016c02cb96eeec47bbfbe8c641d1aa67bddf7cf5ac6edd
+  languageName: node
+  linkType: hard
+
 "which-boxed-primitive@npm:^1.1.0, which-boxed-primitive@npm:^1.1.1":
   version: 1.1.1
   resolution: "which-boxed-primitive@npm:1.1.1"
@@ -6034,6 +6041,7 @@ __metadata:
     react-window: "npm:^2.2.6"
     typescript: "npm:^5.9.3"
     typescript-eslint: "npm:^8.54.0"
+    web-serial-polyfill: "npm:^1.0.15"
   languageName: unknown
   linkType: soft
 

@@ -25,6 +25,36 @@ const expectedPartitionTable = [
   { type: 'data-coredump', offset: 16711680, size: 65536 },
 ];
 
+const WRITE_OPERATION_CONFIRMATION =
+  'This operation writes firmware to your device.\n\nKeep the cable connected, keep this tab open, and keep your device awake until the reset step completes.\n\nContinue?';
+
+const FULL_FLASH_CONFIRMATION_TEXT = 'WRITE FULL FLASH';
+
+const requireConfirmation = (message: string) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  // eslint-disable-next-line no-alert
+  if (!window.confirm(message)) {
+    throw new Error('Operation cancelled by user.');
+  }
+};
+
+const requireTypedConfirmation = (message: string, expectedValue: string) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  // eslint-disable-next-line no-alert
+  const value = window.prompt(message, '');
+  if (value !== expectedValue) {
+    throw new Error(
+      `Operation cancelled. To proceed, enter exactly: ${expectedValue}`,
+    );
+  }
+};
+
 export function useEspOperations() {
   const { stepData, initializeSteps, updateStepData, runStep } =
     useStepRunner();
@@ -36,10 +66,15 @@ export function useEspOperations() {
       setIsRunning(true);
       return fn(...a).finally(() => setIsRunning(false));
     };
+  const wrapWithRunningWakeLock = <Args extends unknown[], T>(
+    fn: (...a: Args) => Promise<T>,
+  ) => wrapWithRunning(wrapWithWakeLock(fn));
 
   const flashRemoteFirmware = async (
     getFirmware: () => Promise<Uint8Array>,
   ) => {
+    requireConfirmation(WRITE_OPERATION_CONFIRMATION);
+
     initializeSteps([
       'Connect to device',
       'Validate partition table',
@@ -128,6 +163,11 @@ export function useEspOperations() {
     flashRemoteFirmware(() => getCommunityFirmware('CrossPoint'));
 
   const flashCustomFirmware = async (getFile: () => File | undefined) => {
+    if (!getFile()) {
+      throw new Error('File not found');
+    }
+    requireConfirmation(WRITE_OPERATION_CONFIRMATION);
+
     initializeSteps([
       'Read file',
       'Connect to device',
@@ -244,6 +284,14 @@ export function useEspOperations() {
   };
 
   const writeFullFlash = async (getFile: () => File | undefined) => {
+    if (!getFile()) {
+      throw new Error('File not found');
+    }
+    requireTypedConfirmation(
+      `Full flash overwrite is the highest-risk operation.\n\nType "${FULL_FLASH_CONFIRMATION_TEXT}" to continue.`,
+      FULL_FLASH_CONFIRMATION_TEXT,
+    );
+
     initializeSteps([
       'Read file',
       'Connect to device',
@@ -331,6 +379,10 @@ export function useEspOperations() {
   };
 
   const swapBootPartition = async () => {
+    requireConfirmation(
+      'This will change which OTA partition the device boots from.\n\nContinue?',
+    );
+
     initializeSteps([
       'Connect to device',
       'Read otadata partition',
@@ -531,18 +583,18 @@ export function useEspOperations() {
     stepData,
     isRunning,
     actions: {
-      flashEnglishFirmware: wrapWithRunning(flashEnglishFirmware),
-      flashChineseFirmware: wrapWithRunning(flashChineseFirmware),
-      flashCrossPointFirmware: wrapWithRunning(flashCrossPointFirmware),
-      flashCustomFirmware: wrapWithRunning(flashCustomFirmware),
+      flashEnglishFirmware: wrapWithRunningWakeLock(flashEnglishFirmware),
+      flashChineseFirmware: wrapWithRunningWakeLock(flashChineseFirmware),
+      flashCrossPointFirmware: wrapWithRunningWakeLock(flashCrossPointFirmware),
+      flashCustomFirmware: wrapWithRunningWakeLock(flashCustomFirmware),
       saveFullFlash: wrapWithRunning(saveFullFlash),
-      writeFullFlash: wrapWithRunning(writeFullFlash),
+      writeFullFlash: wrapWithRunningWakeLock(writeFullFlash),
       fakeWriteFullFlash: wrapWithRunning(fakeWriteFullFlash),
     },
     debugActions: {
       readDebugOtadata: wrapWithRunning(readDebugOtadata),
       readAppPartition: wrapWithRunning(readAppPartition),
-      swapBootPartition: wrapWithRunning(swapBootPartition),
+      swapBootPartition: wrapWithRunningWakeLock(swapBootPartition),
       readAndIdentifyAllFirmware: wrapWithRunning(readAndIdentifyAllFirmware),
     },
   };

@@ -43,7 +43,7 @@ export default function HeaderBar() {
               variant="outline"
               onClick={() =>
                 window.open(
-                  'https://github.com/daveallie/xteink-flasher',
+                  'https://github.com/Unintendedsideeffects/xteink-flasher',
                   '_blank',
                 )
               }
