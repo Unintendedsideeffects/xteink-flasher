@@ -21,6 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { useEspOperations } from '@/esp/useEspOperations';
 import Steps from '@/components/Steps';
+import AndroidAlert from '@/components/AndroidAlert';
 import { OtaPartitionState } from '@/esp/OtaPartitionState';
 import OtaPartition, { OtaPartitionDetails } from '@/esp/OtaPartition';
 import HexSpan from '@/components/HexSpan';
@@ -277,18 +278,7 @@ export default function Debug() {
 
   return (
     <Flex direction="column" gap="20px">
-      <Alert.Root status="info">
-        <Alert.Indicator />
-        <Alert.Content>
-          <Alert.Title>Android support (best effort)</Alert.Title>
-          <Alert.Description>
-            If native Web Serial is unavailable, this tool will fall back to
-            WebUSB on compatible browsers/devices. For best reliability on
-            Android, use Chrome, a USB OTG data cable, keep battery saver off,
-            and do not switch apps while operations are running.
-          </Alert.Description>
-        </Alert.Content>
-      </Alert.Root>
+      <AndroidAlert />
       <Stack gap={3} as="section">
         <div>
           <Heading size="xl">Debug controls</Heading>

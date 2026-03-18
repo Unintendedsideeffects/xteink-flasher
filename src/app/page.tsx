@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react';
 import FileUpload, { FileUploadHandle } from '@/components/FileUpload';
 import Steps from '@/components/Steps';
+import AndroidAlert from '@/components/AndroidAlert';
 import { useEspOperations } from '@/esp/useEspOperations';
 import {
   getOfficialFirmwareVersions,
@@ -39,6 +40,21 @@ export default function Home() {
     getCommunityFirmwareRemoteData().then(setCommunityFirmwareVersions);
   }, []);
 
+  useEffect(() => {
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (isRunning) {
+        event.preventDefault();
+        // eslint-disable-next-line no-param-reassign
+        event.returnValue = ''; // Standard browser behavior to show a confirmation
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isRunning]);
+
   return (
     <Flex direction="column" gap="20px">
       <Alert.Root status="warning">
@@ -64,18 +80,7 @@ export default function Home() {
           </Alert.Description>
         </Alert.Content>
       </Alert.Root>
-      <Alert.Root status="info">
-        <Alert.Indicator />
-        <Alert.Content>
-          <Alert.Title>Android support (best effort)</Alert.Title>
-          <Alert.Description>
-            If native Web Serial is unavailable, this tool will fall back to
-            WebUSB on compatible browsers/devices. For best reliability on
-            Android, use Chrome, a USB OTG data cable, keep battery saver off,
-            and do not switch apps while flashing.
-          </Alert.Description>
-        </Alert.Content>
-      </Alert.Root>
+      <AndroidAlert />
 
       <Stack gap={3} as="section">
         <div>
@@ -103,7 +108,7 @@ export default function Home() {
           >
             Save full flash
           </Button>
-          <Stack direction="row">
+          <Stack direction={{ base: 'column', md: 'row' }}>
             <Flex grow={1}>
               <FileUpload ref={fullFlashFileInput} />
             </Flex>
@@ -168,7 +173,7 @@ export default function Home() {
             {communityFirmwareVersions?.crossPoint.version}) -{' '}
             {communityFirmwareVersions?.crossPoint.releaseDate}
           </Button>
-          <Stack direction="row">
+          <Stack direction={{ base: 'column', md: 'row' }}>
             <Flex grow={1}>
               <FileUpload ref={appPartitionFileInput} />
             </Flex>

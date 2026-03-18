@@ -120,7 +120,7 @@ export default function Steps({ steps }: { steps: StepData[] }) {
                     size="sm"
                     variant="subtle"
                     value={(s.progress.current / s.progress.total) * 100}
-                    width={150}
+                    width="full"
                   >
                     <Progress.Track>
                       <Progress.Range />

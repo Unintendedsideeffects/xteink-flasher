@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import {
   Box,
@@ -15,6 +13,7 @@ import { ColorModeButton } from '@/components/ui/color-mode';
 import { LuGithub, LuSun } from 'react-icons/lu';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import PWAInstallButton from '@/components/PWAInstallButton';
 
 export default function HeaderBar() {
   const pathname = usePathname();
@@ -38,6 +37,7 @@ export default function HeaderBar() {
           <Spacer />
 
           <Flex alignItems="center" gap={2}>
+            <PWAInstallButton />
             <IconButton
               size="sm"
               variant="outline"

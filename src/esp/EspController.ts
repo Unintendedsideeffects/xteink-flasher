@@ -45,7 +45,11 @@ const PARTITION_TYPES: Record<number, Record<number, string>> = {
 type SerialTransportDevice = ConstructorParameters<typeof Transport>[0];
 
 const DEVICE_FILTERS: SerialPortFilter[] = [
-  { usbVendorId: 12346, usbProductId: 4097 },
+  { usbVendorId: 0x303a, usbProductId: 0x1001 }, // Espressif USB Serial/JTAG Controller
+  { usbVendorId: 0x303a, usbProductId: 0x0002 }, // Espressif USB-to-Serial Bridge
+  { usbVendorId: 0x10c4, usbProductId: 0xea60 }, // Silicon Labs CP210x USB to UART Bridge
+  { usbVendorId: 0x1a86, usbProductId: 0x7523 }, // QinHeng Electronics CH340 serial converter
+  { usbVendorId: 0x0403, usbProductId: 0x6001 }, // FTDI FT232 USB-UART
 ];
 
 const FULL_FLASH_SIZE = 0x1000000;
