@@ -10,6 +10,23 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['@chakra-ui/react'],
   },
+  ...(!isGitHubPagesBuild
+    ? {
+        async headers() {
+          return [
+            {
+              source: '/:path*',
+              headers: [
+                {
+                  key: 'Permissions-Policy',
+                  value: 'usb=(self)',
+                },
+              ],
+            },
+          ];
+        },
+      }
+    : {}),
   ...(isGitHubPagesBuild
     ? {
         output: 'export',

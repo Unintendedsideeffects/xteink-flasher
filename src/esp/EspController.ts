@@ -5,6 +5,7 @@ import * as crypto from 'crypto';
 import { ESPLoader, Transport } from 'esptool-js';
 import { serial as webSerialPolyfill } from 'web-serial-polyfill';
 import OtaPartition from '@/esp/OtaPartition';
+import { isLikelyAndroidBrowser } from '@/utils/flashEnvironment';
 
 const PARTITION_TYPES: Record<number, Record<number, string>> = {
   // App type
@@ -92,32 +93,83 @@ export default class EspController {
     );
   }
 
+  private static isUserCancelledSerialRequest(error: unknown): boolean {
+    return (
+      error instanceof DOMException &&
+      (error.name === 'NotFoundError' || error.name === 'AbortError')
+    );
+  }
+
+  private static shouldFallbackToWebUsbAfterSerialError(
+    error: unknown,
+  ): boolean {
+    if (error instanceof DOMException && error.name === 'NotSupportedError') {
+      return true;
+    }
+    if (!isLikelyAndroidBrowser()) {
+      return false;
+    }
+    if (error instanceof DOMException) {
+      return (
+        error.name === 'InvalidStateError' || error.name === 'NetworkError'
+      );
+    }
+    return error instanceof TypeError;
+  }
+
+  private static async requestPortViaWebUsbPolyfill(): Promise<SerialTransportDevice> {
+    return (await webSerialPolyfill.requestPort({
+      filters: DEVICE_FILTERS,
+    })) as unknown as SerialTransportDevice;
+  }
+
   static async requestDevice(): Promise<SerialTransportDevice> {
-    try {
-      const nativeSerial = this.getNativeSerial();
-      if (nativeSerial) {
+    const nativeSerial = this.getNativeSerial();
+    if (nativeSerial) {
+      try {
         return await nativeSerial.requestPort({
           filters: DEVICE_FILTERS,
         });
+      } catch (error) {
+        if (this.isUserCancelledSerialRequest(error)) {
+          throw new Error(
+            'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
+          );
+        }
+        if (
+          this.hasWebUsbSupport() &&
+          this.shouldFallbackToWebUsbAfterSerialError(error)
+        ) {
+          try {
+            return await this.requestPortViaWebUsbPolyfill();
+          } catch (usbError) {
+            if (this.isUserCancelledSerialRequest(usbError)) {
+              throw new Error(
+                'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
+              );
+            }
+            throw usbError;
+          }
+        }
+        throw error;
       }
+    }
 
+    try {
       if (this.hasWebUsbSupport()) {
-        return (await webSerialPolyfill.requestPort({
-          filters: DEVICE_FILTERS,
-        })) as unknown as SerialTransportDevice;
+        return await this.requestPortViaWebUsbPolyfill();
       }
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'NotFoundError') {
+      if (this.isUserCancelledSerialRequest(error)) {
         throw new Error(
-          'No device selected. Connect your Xteink with a USB data cable, then pick it from the browser prompt.',
+          'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
         );
       }
-
       throw error;
     }
 
     throw new Error(
-      'USB serial is not supported in this browser. Use Chrome/Edge on desktop, or Chrome on Android with a USB OTG data cable.',
+      'USB serial is not supported in this browser. On Android use recent Chrome over HTTPS (or install this site as an app), a USB OTG adapter, and a charge+data cable.',
     );
   }
 

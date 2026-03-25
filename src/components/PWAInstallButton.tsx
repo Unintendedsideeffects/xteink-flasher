@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Button, IconButton, Tooltip } from '@chakra-ui/react';
+import { IconButton, Tooltip } from '@chakra-ui/react';
 import { LuDownload } from 'react-icons/lu';
 
-export default function PWAInstallButton({ variant = 'outline' }: { variant?: 'outline' | 'subtle' | 'ghost' }) {
+export default function PWAInstallButton({
+  variant = 'outline',
+}: {
+  variant?: 'outline' | 'subtle' | 'ghost';
+}) {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -27,7 +31,10 @@ export default function PWAInstallButton({ variant = 'outline' }: { variant?: 'o
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener(
+        'beforeinstallprompt',
+        handleBeforeInstallPrompt,
+      );
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
@@ -46,15 +53,20 @@ export default function PWAInstallButton({ variant = 'outline' }: { variant?: 'o
   }
 
   return (
-    <Tooltip content="Install as App">
-      <IconButton
-        aria-label="Install as App"
-        variant={variant}
-        size="sm"
-        onClick={handleInstallClick}
-      >
-        <LuDownload />
-      </IconButton>
-    </Tooltip>
+    <Tooltip.Root>
+      <Tooltip.Trigger asChild>
+        <IconButton
+          aria-label="Install as App"
+          variant={variant}
+          size="sm"
+          onClick={handleInstallClick}
+        >
+          <LuDownload />
+        </IconButton>
+      </Tooltip.Trigger>
+      <Tooltip.Positioner>
+        <Tooltip.Content>Install as App</Tooltip.Content>
+      </Tooltip.Positioner>
+    </Tooltip.Root>
   );
 }

@@ -267,12 +267,9 @@ export function useEspOperations() {
       return c;
     });
 
-    const firmwareFile = await runStep(
-      'Read flash',
-      wrapWithWakeLock(() =>
-        espController.readFullFlash((_, p, t) =>
-          updateStepData('Read flash', { progress: { current: p, total: t } }),
-        ),
+    const firmwareFile = await runStep('Read flash', () =>
+      espController.readFullFlash((_, p, t) =>
+        updateStepData('Read flash', { progress: { current: p, total: t } }),
       ),
     );
 
@@ -587,7 +584,7 @@ export function useEspOperations() {
       flashChineseFirmware: wrapWithRunningWakeLock(flashChineseFirmware),
       flashCrossPointFirmware: wrapWithRunningWakeLock(flashCrossPointFirmware),
       flashCustomFirmware: wrapWithRunningWakeLock(flashCustomFirmware),
-      saveFullFlash: wrapWithRunning(saveFullFlash),
+      saveFullFlash: wrapWithRunningWakeLock(saveFullFlash),
       writeFullFlash: wrapWithRunningWakeLock(writeFullFlash),
       fakeWriteFullFlash: wrapWithRunning(fakeWriteFullFlash),
     },
