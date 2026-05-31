@@ -133,7 +133,7 @@ export default class EspController {
       } catch (error) {
         if (this.isUserCancelledSerialRequest(error)) {
           throw new Error(
-            'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
+            'No device selected. Connect your FORKDRIFT with a USB OTG data cable, then pick it from the Chrome prompt.',
           );
         }
         if (
@@ -145,7 +145,7 @@ export default class EspController {
           } catch (usbError) {
             if (this.isUserCancelledSerialRequest(usbError)) {
               throw new Error(
-                'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
+                'No device selected. Connect your FORKDRIFT with a USB OTG data cable, then pick it from the Chrome prompt.',
               );
             }
             throw usbError;
@@ -162,7 +162,7 @@ export default class EspController {
     } catch (error) {
       if (this.isUserCancelledSerialRequest(error)) {
         throw new Error(
-          'No device selected. Connect your Xteink with a USB OTG data cable, then pick it from the Chrome prompt.',
+          'No device selected. Connect your FORKDRIFT with a USB OTG data cable, then pick it from the Chrome prompt.',
         );
       }
       throw error;
@@ -274,7 +274,7 @@ export default class EspController {
       !EspController.looksLikeEspAppImage(data, APP1_PARTITION_OFFSET)
     ) {
       throw new Error(
-        'Full flash image does not look like Xteink firmware (missing ESP app header in app0/app1). Refusing to write.',
+        'Full flash image does not look like FORKDRIFT firmware (missing ESP app header in app0/app1). Refusing to write.',
       );
     }
 

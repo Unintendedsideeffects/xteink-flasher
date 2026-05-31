@@ -4,9 +4,9 @@ export const dynamic = 'force-static';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Xteink Flash Tools',
-    short_name: 'Xteink Flash',
-    description: 'Web-based tool to help flash the Xteink device',
+    name: 'FORKDRIFT Flash Tools',
+    short_name: 'FORKDRIFT Flash',
+    description: 'Web-based tool to help flash the FORKDRIFT device',
     start_url: './',
     display: 'standalone',
     background_color: '#ffffff',

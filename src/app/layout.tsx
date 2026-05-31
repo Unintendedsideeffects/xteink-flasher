@@ -7,14 +7,14 @@ import HeaderBar from '@/components/HeaderBar';
 import { Container } from '@chakra-ui/react';
 
 export const metadata: Metadata = {
-  title: 'Xteink Flash Tools',
-  description: 'Web based tool to help flash the Xteink device',
+  title: 'FORKDRIFT Flash Tools',
+  description: 'Web based tool to help flash the FORKDRIFT device',
   appleWebApp: {
-    title: 'Xteink Flash',
+    title: 'FORKDRIFT Flash',
     statusBarStyle: 'default',
     capable: true,
   },
-  applicationName: 'Xteink Flash Tools',
+  applicationName: 'FORKDRIFT Flash Tools',
   formatDetection: {
     telephone: false,
   },

@@ -87,7 +87,7 @@ export default function Home() {
           <Heading size="xl">Full flash controls</Heading>
           <Stack gap={1} color="grey" textStyle="sm">
             <p>
-              These actions will allow you to take a full backup your Xteink
+              These actions will allow you to take a full backup your FORKDRIFT
               device in order to be able to restore it in the case that anything
               goes wrong.
             </p>

@@ -24,7 +24,7 @@ export default function HeaderBar() {
       <Container maxW="3xl">
         <Flex h={16} alignItems="center" gap={5}>
           <Heading size="md" color="header-bar.fg">
-            <Link href="/">Xteink Flash Tools</Link>
+            <Link href="/">FORKDRIFT Flash Tools</Link>
           </Heading>
           <Flex h={16} alignItems="center" gap={2}>
             <Text textStyle="sm">
