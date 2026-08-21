@@ -5,6 +5,7 @@
   "scripts": {
     "lint": "yarn eslint --max-warnings 0 --cache && yarn prettier --check . && yarn tsc",
     "lint:fix": "yarn eslint --max-warnings 0 --cache --fix && yarn prettier --write .",
+    "test": "vitest run",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -31,7 +32,6 @@
     "@stylistic/eslint-plugin": "^5.7.1",
     "@types/dom-serial": "^1.0.6",
     "@types/eslint-plugin-jsx-a11y": "^6.10.1",
-    "@types/jest": "^30.0.0",
     "@types/node": "^24.10.11",
     "@types/react": "^19.2.13",
     "@types/react-dom": "^19.2.3",
@@ -50,7 +50,9 @@
     "lint-staged": "^16.2.7",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.54.0"
+    "typescript-eslint": "^8.54.0",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.11"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
