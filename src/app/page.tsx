@@ -15,29 +15,27 @@ import FileUpload, { FileUploadHandle } from '@/components/FileUpload';
 import Steps from '@/components/Steps';
 import AndroidAlert from '@/components/AndroidAlert';
 import { useEspOperations } from '@/esp/useEspOperations';
-import {
-  getOfficialFirmwareVersions,
-  getCommunityFirmwareRemoteData,
-} from '@/remote/firmwareFetcher';
+import { getCommunityFirmwareRemoteData } from '@/remote/firmwareFetcher';
 
 export default function Home() {
   const { actions, stepData, isRunning } = useEspOperations();
-  const [officialFirmwareVersions, setOfficialFirmwareVersions] = useState<{
-    en: string;
-    ch: string;
-  } | null>(null);
   const [communityFirmwareVersions, setCommunityFirmwareVersions] = useState<{
     crossPoint: { version: string; releaseDate: string };
   } | null>(null);
+  const [communityFirmwareError, setCommunityFirmwareError] = useState<
+    string | null
+  >(null);
   const fullFlashFileInput = useRef<FileUploadHandle>(null);
   const appPartitionFileInput = useRef<FileUploadHandle>(null);
 
   useEffect(() => {
-    getOfficialFirmwareVersions().then((versions) =>
-      setOfficialFirmwareVersions(versions),
-    );
-
-    getCommunityFirmwareRemoteData().then(setCommunityFirmwareVersions);
+    getCommunityFirmwareRemoteData()
+      .then(setCommunityFirmwareVersions)
+      .catch((error: unknown) =>
+        setCommunityFirmwareError(
+          error instanceof Error ? error.message : 'Unknown error',
+        ),
+      );
   }, []);
 
   useEffect(() => {
@@ -71,7 +69,7 @@ export default function Home() {
               </p>
               <p>
                 Once you start <b>Write flash from file</b> or{' '}
-                <b>Flash English firmware</b>, you should avoid disconnecting
+                <b>Flash ForkDrift firmware</b>, you should avoid disconnecting
                 your device or closing the tab until the operation is complete.
                 Writing a full flash from your backup should always restore your
                 device to its old state.
@@ -137,7 +135,7 @@ export default function Home() {
               device using <b>Save full flash</b> above.
             </p>
             <p>
-              <b>Flash English/Chinese firmware</b> will download the firmware,
+              <b>Flash ForkDrift firmware</b> will download the firmware,
               overwrite the backup partition with the new firmware, and swap
               over to using this partition (leaving your existing firmware as
               the new backup). This is significantly faster than a full flash
@@ -149,29 +147,19 @@ export default function Home() {
         <Stack as="section">
           <Button
             variant="subtle"
-            onClick={actions.flashEnglishFirmware}
-            disabled={isRunning || !officialFirmwareVersions}
-            loading={!officialFirmwareVersions}
-          >
-            Flash English firmware ({officialFirmwareVersions?.en ?? '...'})
-          </Button>
-          <Button
-            variant="subtle"
-            onClick={actions.flashChineseFirmware}
-            disabled={isRunning || !officialFirmwareVersions}
-            loading={!officialFirmwareVersions}
-          >
-            Flash Chinese firmware ({officialFirmwareVersions?.ch ?? '...'})
-          </Button>
-          <Button
-            variant="subtle"
             onClick={actions.flashCrossPointFirmware}
             disabled={isRunning || !communityFirmwareVersions}
-            loading={!communityFirmwareVersions}
+            loading={!communityFirmwareVersions && !communityFirmwareError}
           >
-            Flash CrossPoint firmware (
-            {communityFirmwareVersions?.crossPoint.version}) -{' '}
-            {communityFirmwareVersions?.crossPoint.releaseDate}
+            {communityFirmwareError ? (
+              `ForkDrift firmware unavailable (${communityFirmwareError})`
+            ) : (
+              <>
+                Flash ForkDrift firmware (
+                {communityFirmwareVersions?.crossPoint.version}) -{' '}
+                {communityFirmwareVersions?.crossPoint.releaseDate}
+              </>
+            )}
           </Button>
           <Stack direction={{ base: 'column', md: 'row' }}>
             <Flex grow={1}>
